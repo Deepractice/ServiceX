@@ -4,23 +4,22 @@ Platform-agnostic DDD service framework. Define services once, run anywhere.
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| `servicexjs` | Fluent API for creating services |
-| `@servicexjs/core` | Domain primitives, DrizzleRepository, types |
-| `@servicexjs/node` | Node.js runtime adapter (dev & testing) |
+| Package | Description | For |
+|---------|-------------|-----|
+| `servicexjs` | Fluent API + all domain primitives | **Users** — the only import you need |
+| `@servicexjs/node` | Node.js runtime adapter | **Users** — dev & testing |
+| `@servicexjs/core` | Internal building blocks | **Runtime adapters** — not for direct use |
 
 ## Quick Start
 
 ```bash
-bun add servicexjs @servicexjs/core @servicexjs/node
+bun add servicexjs @servicexjs/node
 ```
 
 ### Define a Service
 
 ```typescript
-import { createService } from "servicexjs";
-import { Entity, Id, injectable, inject, DrizzleRepository } from "@servicexjs/core";
+import { createService, Entity, Id, injectable, inject, DrizzleRepository } from "servicexjs";
 import { node } from "@servicexjs/node";
 
 // 1. Domain — define your entity
@@ -143,7 +142,9 @@ Returns a fluent builder:
 | `.publicMethods(list)` | Declare unauthenticated methods |
 | `.run(runtime)` | Bind to a platform runtime |
 
-### `@servicexjs/core`
+### `servicexjs` — Domain & Utilities
+
+Everything below is available from `import { ... } from "servicexjs"`.
 
 **Domain:**
 

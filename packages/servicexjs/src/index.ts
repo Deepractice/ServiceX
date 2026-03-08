@@ -5,19 +5,63 @@ import type {
   RpcMethods,
 } from "@servicexjs/core";
 
+// Re-export everything from core — users only need "servicexjs"
+export {
+  // Domain
+  Entity,
+  ValueObject,
+  Id,
+  DomainError,
+  ValidationError,
+  AuthenticationError,
+  ForbiddenError,
+  NotFoundError,
+  ConflictError,
+  // Decorators
+  injectable,
+  inject,
+  singleton,
+  // Repository
+  DrizzleRepository,
+  // Event
+  createEvent,
+  // Container (for advanced use)
+  ServiceContainerImpl,
+} from "@servicexjs/core";
+
+export type {
+  // Repository
+  Repository,
+  // RPC
+  AuthContext,
+  RpcContext,
+  RpcMethodHandler,
+  RpcMethods,
+  RpcRequest,
+  RpcResponse,
+  RpcSuccessResponse,
+  RpcErrorResponse,
+  // Event
+  PlatformEvent,
+  UserCreatedEvent,
+  UserCreatedPayload,
+  // Container
+  ServiceDefinition,
+  RegistrationContext,
+  RegisterFn,
+  Runtime,
+} from "@servicexjs/core";
+
 /**
  * Fluent builder for defining and running a service.
  */
 interface ServiceBuilder {
   /** Declare RPC method handlers. */
   rpc(methods: RpcMethods): ServiceBuilder;
-
   /** Declare dependency registration. */
   register(fn: RegisterFn): ServiceBuilder;
-
   /** Declare methods that don't require authentication. */
   publicMethods(methods: string[]): ServiceBuilder;
-
   /** Bind to a platform runtime and produce the runnable export. */
   run<T>(runtime: Runtime<T>): T;
 }
@@ -65,14 +109,13 @@ class ServiceBuilderImpl implements ServiceBuilder {
  *
  * @example
  * ```ts
- * import { createService } from "servicexjs";
- * import { cloudflare } from "@servicexjs/platform";
- * import { injectable, inject } from "@servicexjs/core";
+ * import { createService, Entity, Id, injectable, inject } from "servicexjs";
+ * import { node } from "@servicexjs/node";
  *
  * export default createService("tenant")
  *   .register((ctx, env) => {
- *     ctx.value("DB", drizzle(env.DB));
- *     ctx.bind("TenantRepo", DrizzleTenantRepo);
+ *     ctx.value("DB", env.DB);
+ *     ctx.bind("TenantRepo", TenantRepo);
  *     ctx.bind("TenantService", TenantService);
  *   })
  *   .rpc({
@@ -80,15 +123,8 @@ class ServiceBuilderImpl implements ServiceBuilder {
  *       const svc = ctx.resolve<TenantService>("TenantService");
  *       return svc.create(params.name, ctx.auth.tenantId);
  *     },
- *     "tenant.list": async (_params, ctx) => {
- *       const svc = ctx.resolve<TenantService>("TenantService");
- *       return svc.list(ctx.auth.tenantId);
- *     },
  *   })
- *   .publicMethods(["health.check"])
- *   .run(cloudflare({
- *     auth: { secretKey: "JWT_SECRET" },
- *   }));
+ *   .run(node({ port: 3000 }));
  * ```
  */
 export function createService(name: string): ServiceBuilder {
