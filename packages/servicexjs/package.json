@@ -1,0 +1,25 @@
+{
+  "name": "servicexjs",
+  "version": "0.1.0",
+  "description": "Create DDD services with a fluent API — platform-agnostic, run anywhere",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@servicexjs/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "tsup": "^8.5.1"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "@servicexjs/core",
+  "version": "0.1.0",
+  "description": "ServiceX core — domain primitives, DI, DrizzleRepository, types",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./domain": {
+      "types": "./dist/domain/index.d.ts",
+      "import": "./dist/domain/index.js"
+    },
+    "./repository": {
+      "types": "./dist/repository/index.d.ts",
+      "import": "./dist/repository/index.js"
+    },
+    "./rpc": {
+      "types": "./dist/rpc/index.d.ts",
+      "import": "./dist/rpc/index.js"
+    },
+    "./event": {
+      "types": "./dist/event/index.d.ts",
+      "import": "./dist/event/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.38.0",
+    "reflect-metadata": "^0.2.0",
+    "tsyringe": "^4.8.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "tsup": "^8.5.1"
+  }
+}
