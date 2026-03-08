@@ -1,5 +1,5 @@
-import type { ServiceDefinition, Runtime, RpcContext, AuthContext } from "@servicexjs/core";
-import { ServiceContainerImpl, DomainError } from "@servicexjs/core";
+import type { AuthContext, RpcContext, Runtime, ServiceDefinition } from "@servicexjs/core";
+import { ServiceContainerImpl } from "@servicexjs/core";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { jwtVerify } from "jose";
@@ -75,12 +75,18 @@ export function node(config: NodeConfig = {}): Runtime<{ app: Hono; port: number
 
         const { method, params = {} } = body;
         if (!method || typeof method !== "string") {
-          return c.json({ error: { code: "INVALID_REQUEST", message: "Missing or invalid method" } }, 400);
+          return c.json(
+            { error: { code: "INVALID_REQUEST", message: "Missing or invalid method" } },
+            400
+          );
         }
 
         const handler = definition.methods[method];
         if (!handler) {
-          return c.json({ error: { code: "METHOD_NOT_FOUND", message: `Unknown method: ${method}` } }, 404);
+          return c.json(
+            { error: { code: "METHOD_NOT_FOUND", message: `Unknown method: ${method}` } },
+            404
+          );
         }
 
         // Auth
@@ -95,7 +101,10 @@ export function node(config: NodeConfig = {}): Runtime<{ app: Hono; port: number
 
           auth = await verifyToken(token, secret);
           if (!auth) {
-            return c.json({ error: { code: "UNAUTHORIZED", message: "Invalid or expired token" } }, 401);
+            return c.json(
+              { error: { code: "UNAUTHORIZED", message: "Invalid or expired token" } },
+              401
+            );
           }
         }
 
@@ -110,9 +119,10 @@ export function node(config: NodeConfig = {}): Runtime<{ app: Hono; port: number
           const result = await handler(params, ctx);
           return c.json({ result });
         } catch (err) {
-          if (err instanceof DomainError) {
-            const status = ERROR_STATUS_MAP[err.code] || 500;
-            return c.json({ error: { code: err.code, message: err.message } }, status as any);
+          if (err instanceof Error && "code" in err && typeof (err as any).code === "string") {
+            const code = (err as any).code as string;
+            const status = ERROR_STATUS_MAP[code] || 500;
+            return c.json({ error: { code, message: err.message } }, status as any);
           }
           const message = err instanceof Error ? err.message : "Internal error";
           return c.json({ error: { code: "INTERNAL_ERROR", message } }, 500);

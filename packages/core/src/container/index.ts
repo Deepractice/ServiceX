@@ -1,7 +1,7 @@
 export { ServiceContainerImpl } from "./ServiceContainer";
 export type {
-  ServiceDefinition,
-  RegistrationContext,
   RegisterFn,
+  RegistrationContext,
   Runtime,
+  ServiceDefinition,
 } from "./types";

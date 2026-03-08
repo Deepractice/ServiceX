@@ -6,10 +6,7 @@
 /**
  * Base event interface — all platform events must conform to this shape.
  */
-export interface PlatformEvent<
-  TType extends string = string,
-  TPayload = Record<string, unknown>,
-> {
+export interface PlatformEvent<TType extends string = string, TPayload = Record<string, unknown>> {
   type: TType;
   payload: TPayload;
   timestamp: number;
@@ -22,7 +19,7 @@ export interface PlatformEvent<
 export function createEvent<TType extends string, TPayload>(
   type: TType,
   payload: TPayload,
-  traceId?: string,
+  traceId?: string
 ): PlatformEvent<TType, TPayload> {
   return { type, payload, timestamp: Date.now(), traceId };
 }

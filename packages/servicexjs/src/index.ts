@@ -1,55 +1,49 @@
-import type {
-  ServiceDefinition,
-  RegisterFn,
-  Runtime,
-  RpcMethods,
-} from "@servicexjs/core";
-
-// Re-export everything from core — users only need "servicexjs"
-export {
-  // Domain
-  Entity,
-  ValueObject,
-  Id,
-  DomainError,
-  ValidationError,
-  AuthenticationError,
-  ForbiddenError,
-  NotFoundError,
-  ConflictError,
-  // Decorators
-  injectable,
-  inject,
-  singleton,
-  // Repository
-  DrizzleRepository,
-  // Event
-  createEvent,
-  // Container (for advanced use)
-  ServiceContainerImpl,
-} from "@servicexjs/core";
+import type { RegisterFn, RpcMethods, Runtime, ServiceDefinition } from "@servicexjs/core";
 
 export type {
-  // Repository
-  Repository,
   // RPC
   AuthContext,
+  // Event
+  PlatformEvent,
+  RegisterFn,
+  RegistrationContext,
+  // Repository
+  Repository,
   RpcContext,
+  RpcErrorResponse,
   RpcMethodHandler,
   RpcMethods,
   RpcRequest,
   RpcResponse,
   RpcSuccessResponse,
-  RpcErrorResponse,
-  // Event
-  PlatformEvent,
-  UserCreatedEvent,
-  UserCreatedPayload,
+  Runtime,
   // Container
   ServiceDefinition,
-  RegistrationContext,
-  RegisterFn,
-  Runtime,
+  UserCreatedEvent,
+  UserCreatedPayload,
+} from "@servicexjs/core";
+// Re-export everything from core — users only need "servicexjs"
+export {
+  AuthenticationError,
+  ConflictError,
+  // Event
+  createEvent,
+  DomainError,
+  // Repository
+  DrizzleRepository,
+  // Domain
+  Entity,
+  ForbiddenError,
+  Id,
+  inject,
+  // Decorators
+  injectable,
+  NotFoundError,
+  // Container (for advanced use)
+  ServiceContainerImpl,
+  singleton,
+  ValidationError,
+  ValueObject,
 } from "@servicexjs/core";
 
 /**
@@ -89,10 +83,7 @@ class ServiceBuilderImpl implements ServiceBuilder {
   }
 
   publicMethods(methods: string[]): ServiceBuilder {
-    this._definition.publicMethods = [
-      ...this._definition.publicMethods,
-      ...methods,
-    ];
+    this._definition.publicMethods = [...this._definition.publicMethods, ...methods];
     return this;
   }
 

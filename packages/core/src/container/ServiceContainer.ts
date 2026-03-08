@@ -21,7 +21,7 @@ export class ServiceContainerImpl {
 
   initialize(
     registerFn: ((ctx: RegistrationContext, env: Record<string, unknown>) => void) | null,
-    env: Record<string, unknown>,
+    env: Record<string, unknown>
   ): void {
     if (this._initialized) return;
     this._initialized = true;

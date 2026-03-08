@@ -35,7 +35,7 @@ export abstract class DrizzleRepository<
 {
   constructor(
     protected readonly db: any,
-    protected readonly table: TTable,
+    protected readonly table: TTable
   ) {}
 
   protected abstract toEntity(row: any): TEntity;
@@ -67,8 +67,6 @@ export abstract class DrizzleRepository<
   }
 
   async delete(id: string): Promise<void> {
-    await this.db
-      .delete(this.table)
-      .where(eq((this.table as any).id, id));
+    await this.db.delete(this.table).where(eq((this.table as any).id, id));
   }
 }

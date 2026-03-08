@@ -1,11 +1,11 @@
 export { Entity } from "./Entity";
-export { ValueObject } from "./ValueObject";
-export { Id } from "./Id";
 export {
-  DomainError,
-  ValidationError,
   AuthenticationError,
+  ConflictError,
+  DomainError,
   ForbiddenError,
   NotFoundError,
-  ConflictError,
+  ValidationError,
 } from "./Errors";
+export { Id } from "./Id";
+export { ValueObject } from "./ValueObject";

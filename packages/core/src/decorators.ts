@@ -10,4 +10,4 @@
  * }
  * ```
  */
-export { injectable, inject, singleton } from "tsyringe";
+export { inject, injectable, singleton } from "tsyringe";

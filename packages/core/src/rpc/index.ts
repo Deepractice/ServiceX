@@ -32,7 +32,7 @@ export interface RpcContext {
  */
 export type RpcMethodHandler<TParams = any, TResult = any> = (
   params: TParams,
-  ctx: RpcContext,
+  ctx: RpcContext
 ) => Promise<TResult> | TResult;
 
 /**
