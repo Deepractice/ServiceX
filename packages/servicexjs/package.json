@@ -1,6 +1,6 @@
 {
   "name": "servicexjs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Create DDD services with a fluent API — platform-agnostic, run anywhere",
   "type": "module",
   "exports": {
