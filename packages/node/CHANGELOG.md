@@ -1,5 +1,12 @@
 # @servicexjs/node
 
+## 0.3.0
+
+### Patch Changes
+
+- Updated dependencies [a18556b]
+  - @servicexjs/core@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
