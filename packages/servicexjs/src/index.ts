@@ -3,6 +3,7 @@ import type { RegisterFn, RpcMethods, Runtime, ServiceDefinition } from "@servic
 export type {
   // RPC
   AuthContext,
+  MethodSchema,
   // Event
   PlatformEvent,
   RegisterFn,
@@ -10,6 +11,7 @@ export type {
   // Repository
   Repository,
   RpcContext,
+  RpcError,
   RpcErrorResponse,
   RpcMethodHandler,
   RpcMethods,
@@ -19,6 +21,7 @@ export type {
   Runtime,
   // Container
   ServiceDefinition,
+  ServiceSchema,
   UserCreatedEvent,
   UserCreatedPayload,
 } from "@servicexjs/core";
@@ -28,16 +31,20 @@ export {
   ConflictError,
   // Event
   createEvent,
+  DOMAIN_ERROR_CODE_MAP,
   DomainError,
   // Repository
   DrizzleRepository,
   // Domain
   Entity,
+  ERROR_HTTP_STATUS_MAP,
+  ErrorCodes,
   ForbiddenError,
   Id,
   inject,
   // Decorators
   injectable,
+  JSONRPC_VERSION,
   NotFoundError,
   // Container (for advanced use)
   ServiceContainerImpl,
@@ -100,22 +107,16 @@ class ServiceBuilderImpl implements ServiceBuilder {
  *
  * @example
  * ```ts
- * import { createService, Entity, Id, injectable, inject } from "servicexjs";
- * import { node } from "@servicexjs/node";
+ * import { createService, Entity, Id } from "servicexjs";
+ * import { cloudflare } from "@deepractice/servicex-cloudflare";
  *
- * export default createService("tenant")
- *   .register((ctx, env) => {
- *     ctx.value("DB", env.DB);
- *     ctx.bind("TenantRepo", TenantRepo);
- *     ctx.bind("TenantService", TenantService);
- *   })
+ * export default createService("auth")
  *   .rpc({
- *     "tenant.create": async (params, ctx) => {
- *       const svc = ctx.resolve<TenantService>("TenantService");
- *       return svc.create(params.name, ctx.auth.tenantId);
- *     },
+ *     "key.create": async (params, ctx) => { ... },
+ *     "key.verify": async (params, ctx) => { ... },
  *   })
- *   .run(node({ port: 3000 }));
+ *   .publicMethods(["key.verify"])
+ *   .run(cloudflare());
  * ```
  */
 export function createService(name: string): ServiceBuilder {

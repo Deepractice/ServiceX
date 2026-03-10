@@ -25,11 +25,21 @@ export { DrizzleRepository } from "./repository";
 // RPC types
 export type {
   AuthContext,
+  MethodSchema,
   RpcContext,
+  RpcError,
   RpcErrorResponse,
   RpcMethodHandler,
   RpcMethods,
   RpcRequest,
   RpcResponse,
   RpcSuccessResponse,
+  ServiceSchema,
+} from "./rpc";
+// RPC constants
+export {
+  DOMAIN_ERROR_CODE_MAP,
+  ERROR_HTTP_STATUS_MAP,
+  ErrorCodes,
+  JSONRPC_VERSION,
 } from "./rpc";

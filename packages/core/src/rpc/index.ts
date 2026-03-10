@@ -1,8 +1,74 @@
 /**
- * RPC type contracts.
- * Defines the shape of RPC requests, responses, and method handlers.
- * The actual HTTP dispatch lives in @servicexjs/platform.
+ * JSON-RPC 2.0 type contracts.
+ *
+ * All RPC communication follows the JSON-RPC 2.0 specification.
+ * @see https://www.jsonrpc.org/specification
  */
+
+export const JSONRPC_VERSION = "2.0";
+
+// ==================== JSON-RPC 2.0 Error Codes ====================
+
+/**
+ * Standard JSON-RPC 2.0 error codes + application-level codes.
+ *
+ * Standard range:
+ *   -32700         Parse error
+ *   -32600         Invalid request
+ *   -32601         Method not found
+ *   -32602         Invalid params
+ *   -32603         Internal error
+ *   -32000..-32099 Server error (reserved)
+ *
+ * Application range (ServiceX convention):
+ *   -40100         Authentication error (401)
+ *   -40300         Forbidden (403)
+ *   -40400         Not found (404)
+ *   -40900         Conflict (409)
+ */
+export const ErrorCodes = {
+  // JSON-RPC 2.0 standard
+  PARSE_ERROR: -32700,
+  INVALID_REQUEST: -32600,
+  METHOD_NOT_FOUND: -32601,
+  INVALID_PARAMS: -32602,
+  INTERNAL_ERROR: -32603,
+
+  // Application-level (mapped from DomainError codes)
+  VALIDATION_ERROR: -32602, // alias for INVALID_PARAMS
+  AUTHENTICATION_ERROR: -40100,
+  FORBIDDEN: -40300,
+  NOT_FOUND: -40400,
+  CONFLICT: -40900,
+} as const;
+
+/**
+ * Map DomainError code strings to JSON-RPC 2.0 integer codes.
+ */
+export const DOMAIN_ERROR_CODE_MAP: Record<string, number> = {
+  VALIDATION_ERROR: ErrorCodes.VALIDATION_ERROR,
+  AUTHENTICATION_ERROR: ErrorCodes.AUTHENTICATION_ERROR,
+  FORBIDDEN: ErrorCodes.FORBIDDEN,
+  NOT_FOUND: ErrorCodes.NOT_FOUND,
+  CONFLICT: ErrorCodes.CONFLICT,
+};
+
+/**
+ * Map JSON-RPC error codes to HTTP status codes.
+ */
+export const ERROR_HTTP_STATUS_MAP: Record<number, number> = {
+  [ErrorCodes.PARSE_ERROR]: 400,
+  [ErrorCodes.INVALID_REQUEST]: 400,
+  [ErrorCodes.METHOD_NOT_FOUND]: 404,
+  [ErrorCodes.INVALID_PARAMS]: 400,
+  [ErrorCodes.INTERNAL_ERROR]: 500,
+  [ErrorCodes.AUTHENTICATION_ERROR]: 401,
+  [ErrorCodes.FORBIDDEN]: 403,
+  [ErrorCodes.NOT_FOUND]: 404,
+  [ErrorCodes.CONFLICT]: 409,
+};
+
+// ==================== Auth ====================
 
 /**
  * Auth context injected into RPC handlers by the runtime.
@@ -15,6 +81,8 @@ export interface AuthContext {
   avatarUrl?: string;
 }
 
+// ==================== RPC Context ====================
+
 /**
  * Context available to each RPC method handler.
  */
@@ -26,6 +94,8 @@ export interface RpcContext {
   /** Raw environment variables (platform-injected). */
   env: Record<string, unknown>;
 }
+
+// ==================== Method Handler ====================
 
 /**
  * A single RPC method handler.
@@ -40,26 +110,61 @@ export type RpcMethodHandler<TParams = any, TResult = any> = (
  */
 export type RpcMethods = Record<string, RpcMethodHandler>;
 
+// ==================== JSON-RPC 2.0 Request/Response ====================
+
 /**
- * RPC request format — the universal internal API contract.
+ * JSON-RPC 2.0 request.
  */
 export interface RpcRequest {
+  jsonrpc: "2.0";
+  id?: string | number | null;
   method: string;
   params?: Record<string, unknown>;
 }
 
 /**
- * RPC response formats.
+ * JSON-RPC 2.0 success response.
  */
 export interface RpcSuccessResponse<T = unknown> {
+  jsonrpc: "2.0";
+  id: string | number | null;
   result: T;
 }
 
+/**
+ * JSON-RPC 2.0 error object.
+ */
+export interface RpcError {
+  code: number;
+  message: string;
+  data?: unknown;
+}
+
+/**
+ * JSON-RPC 2.0 error response.
+ */
 export interface RpcErrorResponse {
-  error: {
-    code: string;
-    message: string;
-  };
+  jsonrpc: "2.0";
+  id: string | number | null;
+  error: RpcError;
 }
 
 export type RpcResponse<T = unknown> = RpcSuccessResponse<T> | RpcErrorResponse;
+
+// ==================== Schema ====================
+
+/**
+ * Method schema for rpc.describe.
+ */
+export interface MethodSchema {
+  name: string;
+  public: boolean;
+}
+
+/**
+ * Service schema returned by rpc.describe.
+ */
+export interface ServiceSchema {
+  name: string;
+  methods: MethodSchema[];
+}
