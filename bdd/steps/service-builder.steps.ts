@@ -30,10 +30,8 @@ When(
 
 When("running with the node runtime", function (this: ServiceXWorld) {
   const methods = (this as any)._methods || {};
-  const publicMethods = (this as any)._publicMethods || [];
   this.runResult = createService((this as any)._serviceName || "test")
     .rpc(methods)
-    .publicMethods(publicMethods)
     .run(node({ port: 0 }));
 });
 
@@ -82,8 +80,9 @@ When(
   "creating service {string} with {string} as a public method",
   function (this: ServiceXWorld, name: string, method: string) {
     (this as any)._serviceName = name;
-    (this as any)._methods = { [method]: async () => ({ status: "ok" }) };
-    (this as any)._publicMethods = [method];
+    (this as any)._methods = {
+      [method]: { handler: async () => ({ status: "ok" }), permissions: [] },
+    };
   }
 );
 

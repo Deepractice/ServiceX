@@ -106,9 +106,50 @@ export type RpcMethodHandler<TParams = any, TResult = any> = (
 ) => Promise<TResult> | TResult;
 
 /**
- * Map of method names to their handlers.
+ * RPC method definition with metadata.
+ *
+ * - `permissions: undefined` → requires authentication (default)
+ * - `permissions: []` → public, no auth needed
+ * - `permissions: ["admin"]` → requires auth + specific permission
  */
-export type RpcMethods = Record<string, RpcMethodHandler>;
+export interface RpcMethodDefinition {
+  handler: RpcMethodHandler;
+  description?: string;
+  permissions?: string[];
+}
+
+/**
+ * A method entry: either a bare handler or a full definition with metadata.
+ */
+export type RpcMethodEntry = RpcMethodHandler | RpcMethodDefinition;
+
+/**
+ * Map of method names to their handlers or definitions.
+ */
+export type RpcMethods = Record<string, RpcMethodEntry>;
+
+/**
+ * Normalized method map — all entries resolved to full definitions.
+ * Used internally by ServiceDefinition and runtime adapters.
+ */
+export type NormalizedRpcMethods = Record<string, RpcMethodDefinition>;
+
+/**
+ * Check if a method entry is a full definition (not a bare handler).
+ */
+export function isMethodDefinition(entry: RpcMethodEntry): entry is RpcMethodDefinition {
+  return typeof entry === "object" && entry !== null && "handler" in entry;
+}
+
+/**
+ * Normalize a method entry to a full definition.
+ */
+export function normalizeMethod(entry: RpcMethodEntry): RpcMethodDefinition {
+  if (isMethodDefinition(entry)) {
+    return entry;
+  }
+  return { handler: entry };
+}
 
 // ==================== JSON-RPC 2.0 Request/Response ====================
 
@@ -154,15 +195,16 @@ export type RpcResponse<T = unknown> = RpcSuccessResponse<T> | RpcErrorResponse;
 // ==================== Schema ====================
 
 /**
- * Method schema for rpc.describe.
+ * Method schema for /rpc/methods.
  */
 export interface MethodSchema {
   name: string;
-  public: boolean;
+  description?: string;
+  permissions?: string[];
 }
 
 /**
- * Service schema returned by rpc.describe.
+ * Service schema returned by /rpc/methods.
  */
 export interface ServiceSchema {
   name: string;

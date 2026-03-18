@@ -26,9 +26,12 @@ export { DrizzleRepository } from "./repository";
 export type {
   AuthContext,
   MethodSchema,
+  NormalizedRpcMethods,
   RpcContext,
   RpcError,
   RpcErrorResponse,
+  RpcMethodDefinition,
+  RpcMethodEntry,
   RpcMethodHandler,
   RpcMethods,
   RpcRequest,
@@ -36,10 +39,12 @@ export type {
   RpcSuccessResponse,
   ServiceSchema,
 } from "./rpc";
-// RPC constants
+// RPC constants & helpers
 export {
   DOMAIN_ERROR_CODE_MAP,
   ERROR_HTTP_STATUS_MAP,
   ErrorCodes,
+  isMethodDefinition,
   JSONRPC_VERSION,
+  normalizeMethod,
 } from "./rpc";

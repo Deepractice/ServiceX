@@ -1,9 +1,17 @@
-import type { RegisterFn, RpcMethods, Runtime, ServiceDefinition } from "@servicexjs/core";
+import type {
+  NormalizedRpcMethods,
+  RegisterFn,
+  RpcMethods,
+  Runtime,
+  ServiceDefinition,
+} from "@servicexjs/core";
+import { normalizeMethod } from "@servicexjs/core";
 
 export type {
   // RPC
   AuthContext,
   MethodSchema,
+  NormalizedRpcMethods,
   // Event
   PlatformEvent,
   RegisterFn,
@@ -13,6 +21,8 @@ export type {
   RpcContext,
   RpcError,
   RpcErrorResponse,
+  RpcMethodDefinition,
+  RpcMethodEntry,
   RpcMethodHandler,
   RpcMethods,
   RpcRequest,
@@ -44,8 +54,10 @@ export {
   inject,
   // Decorators
   injectable,
+  isMethodDefinition,
   JSONRPC_VERSION,
   NotFoundError,
+  normalizeMethod,
   // Container (for advanced use)
   ServiceContainerImpl,
   singleton,
@@ -57,12 +69,34 @@ export {
  * Fluent builder for defining and running a service.
  */
 interface ServiceBuilder {
-  /** Declare RPC method handlers. */
+  /**
+   * Declare RPC methods.
+   *
+   * Each method can be a bare handler or a full definition with metadata:
+   * ```ts
+   * .rpc({
+   *   // Bare handler — requires auth (default)
+   *   "tenant.get": async (params, ctx) => { ... },
+   *
+   *   // Full definition with metadata
+   *   "tenant.create": {
+   *     handler: async (params, ctx) => { ... },
+   *     description: "Create a new tenant",
+   *     permissions: ["admin"],
+   *   },
+   *
+   *   // Public method (no auth required)
+   *   "health.check": {
+   *     handler: async () => ({ ok: true }),
+   *     description: "Health check",
+   *     permissions: [],
+   *   },
+   * })
+   * ```
+   */
   rpc(methods: RpcMethods): ServiceBuilder;
   /** Declare dependency registration. */
   register(fn: RegisterFn): ServiceBuilder;
-  /** Declare methods that don't require authentication. */
-  publicMethods(methods: string[]): ServiceBuilder;
   /** Bind to a platform runtime and produce the runnable export. */
   run<T>(runtime: Runtime<T>): T;
 }
@@ -75,22 +109,20 @@ class ServiceBuilderImpl implements ServiceBuilder {
       name,
       methods: {},
       registerFn: null,
-      publicMethods: [],
     };
   }
 
   rpc(methods: RpcMethods): ServiceBuilder {
-    this._definition.methods = { ...this._definition.methods, ...methods };
+    const normalized: NormalizedRpcMethods = {};
+    for (const [name, entry] of Object.entries(methods)) {
+      normalized[name] = normalizeMethod(entry);
+    }
+    this._definition.methods = { ...this._definition.methods, ...normalized };
     return this;
   }
 
   register(fn: RegisterFn): ServiceBuilder {
     this._definition.registerFn = fn;
-    return this;
-  }
-
-  publicMethods(methods: string[]): ServiceBuilder {
-    this._definition.publicMethods = [...this._definition.publicMethods, ...methods];
     return this;
   }
 
@@ -107,15 +139,21 @@ class ServiceBuilderImpl implements ServiceBuilder {
  *
  * @example
  * ```ts
- * import { createService, Entity, Id } from "servicexjs";
+ * import { createService } from "servicexjs";
  * import { cloudflare } from "@deepractice/servicex-cloudflare";
  *
  * export default createService("auth")
  *   .rpc({
- *     "key.create": async (params, ctx) => { ... },
- *     "key.verify": async (params, ctx) => { ... },
+ *     "key.create": {
+ *       handler: async (params, ctx) => { ... },
+ *       description: "Create an API key",
+ *     },
+ *     "key.verify": {
+ *       handler: async (params, ctx) => { ... },
+ *       description: "Verify an API key",
+ *       permissions: [],  // public
+ *     },
  *   })
- *   .publicMethods(["key.verify"])
  *   .run(cloudflare());
  * ```
  */
