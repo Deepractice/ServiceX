@@ -1,4 +1,4 @@
-import type { RpcMethods } from "../rpc";
+import type { NormalizedRpcMethods } from "../rpc";
 
 /**
  * Registration context for declaring dependencies.
@@ -20,12 +20,13 @@ export type RegisterFn = (ctx: RegistrationContext, env: Record<string, unknown>
 /**
  * The complete, platform-agnostic definition of a service.
  * Built via the fluent API in `servicexjs`, consumed by Runtime adapters.
+ *
+ * Methods are always normalized: each entry is a full `RpcMethodDefinition`.
  */
 export interface ServiceDefinition {
   name: string;
-  methods: RpcMethods;
+  methods: NormalizedRpcMethods;
   registerFn: RegisterFn | null;
-  publicMethods: string[];
 }
 
 /**

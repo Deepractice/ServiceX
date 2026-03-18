@@ -1,4 +1,11 @@
-import type { AuthContext, RpcContext, Runtime, ServiceDefinition } from "@servicexjs/core";
+import type {
+  AuthContext,
+  RpcContext,
+  RpcMethodDefinition,
+  Runtime,
+  ServiceDefinition,
+  ServiceSchema,
+} from "@servicexjs/core";
 import { ServiceContainerImpl } from "@servicexjs/core";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -32,6 +39,29 @@ const ERROR_STATUS_MAP: Record<string, number> = {
 };
 
 /**
+ * Check if a method is public (no auth required).
+ */
+function isPublicMethod(method: RpcMethodDefinition): boolean {
+  return Array.isArray(method.permissions) && method.permissions.length === 0;
+}
+
+/**
+ * Build schema from service definition.
+ */
+function buildSchema(definition: ServiceDefinition): ServiceSchema {
+  const methods = Object.entries(definition.methods).map(([name, def]) => ({
+    name,
+    ...(def.description && { description: def.description }),
+    ...(def.permissions && { permissions: def.permissions }),
+  }));
+
+  return {
+    name: definition.name,
+    methods,
+  };
+}
+
+/**
  * Create a Node.js runtime adapter for development and testing.
  *
  * @example
@@ -40,7 +70,12 @@ const ERROR_STATUS_MAP: Record<string, number> = {
  * import { node } from "@servicexjs/node";
  *
  * export default createService("tenant")
- *   .rpc({ ... })
+ *   .rpc({
+ *     "tenant.create": {
+ *       handler: async (params, ctx) => { ... },
+ *       description: "Create a tenant",
+ *     },
+ *   })
  *   .register((ctx, env) => { ... })
  *   .run(node({
  *     port: 3000,
@@ -62,6 +97,11 @@ export function node(config: NodeConfig = {}): Runtime<{ app: Hono; port: number
       const app = new Hono().basePath(basePath);
       app.use("*", cors());
 
+      // Method discovery endpoint
+      app.get("/rpc/methods", (c) => {
+        return c.json(buildSchema(definition));
+      });
+
       // RPC endpoint
       app.post("/rpc", async (c) => {
         container.initialize(definition.registerFn, env);
@@ -81,8 +121,13 @@ export function node(config: NodeConfig = {}): Runtime<{ app: Hono; port: number
           );
         }
 
-        const handler = definition.methods[method];
-        if (!handler) {
+        // Built-in: rpc.methods
+        if (method === "rpc.methods") {
+          return c.json({ result: buildSchema(definition) });
+        }
+
+        const methodDef = definition.methods[method];
+        if (!methodDef) {
           return c.json(
             { error: { code: "METHOD_NOT_FOUND", message: `Unknown method: ${method}` } },
             404
@@ -90,10 +135,9 @@ export function node(config: NodeConfig = {}): Runtime<{ app: Hono; port: number
         }
 
         // Auth
-        const isPublic = definition.publicMethods.includes(method);
         let auth: AuthContext | null = null;
 
-        if (!isPublic) {
+        if (!isPublicMethod(methodDef)) {
           const token = extractToken(c, cookieName);
           if (!token) {
             return c.json({ error: { code: "UNAUTHORIZED", message: "No token provided" } }, 401);
@@ -116,7 +160,7 @@ export function node(config: NodeConfig = {}): Runtime<{ app: Hono; port: number
         };
 
         try {
-          const result = await handler(params, ctx);
+          const result = await methodDef.handler(params, ctx);
           return c.json({ result });
         } catch (err) {
           if (err instanceof Error && "code" in err && typeof (err as any).code === "string") {
@@ -136,7 +180,7 @@ export function node(config: NodeConfig = {}): Runtime<{ app: Hono; port: number
 
 // ---- Internal helpers ----
 
-function extractToken(c: any, cookieName: string): string | null {
+function extractToken(c: any, _cookieName: string): string | null {
   const authHeader = c.req.header("Authorization");
   if (authHeader?.startsWith("Bearer ")) {
     return authHeader.slice(7);
