@@ -78,6 +78,7 @@ export interface AuthContext {
   tenantId: string;
   email: string;
   name: string;
+  permissions: string[];
   avatarUrl?: string;
 }
 
