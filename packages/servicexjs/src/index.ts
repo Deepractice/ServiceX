@@ -1,11 +1,21 @@
 import type {
   NormalizedRpcMethods,
   RegisterFn,
+  RpcMethodHandler,
   RpcMethods,
   Runtime,
   ServiceDefinition,
 } from "@servicexjs/core";
 import { normalizeMethod } from "@servicexjs/core";
+
+/**
+ * RPC Protocol definition — can be from @deepracticex/rpc or any compatible shape.
+ */
+interface RpcProtocolLike {
+  namespace: string;
+  version: string;
+  methods: { name: string; description?: string; permissions?: string[] }[];
+}
 
 export type {
   // RPC
@@ -72,29 +82,33 @@ interface ServiceBuilder {
   /**
    * Declare RPC methods.
    *
-   * Each method can be a bare handler or a full definition with metadata:
+   * Two calling conventions:
+   *
+   * **Inline** — methods with handlers defined together:
    * ```ts
    * .rpc({
-   *   // Bare handler — requires auth (default)
-   *   "tenant.get": async (params, ctx) => { ... },
-   *
-   *   // Full definition with metadata
-   *   "tenant.create": {
+   *   "session.create": async (params, ctx) => { ... },
+   *   "key.create": {
    *     handler: async (params, ctx) => { ... },
-   *     description: "Create a new tenant",
+   *     description: "Create an API key",
    *     permissions: ["admin"],
-   *   },
-   *
-   *   // Public method (no auth required)
-   *   "health.check": {
-   *     handler: async () => ({ ok: true }),
-   *     description: "Health check",
-   *     permissions: [],
    *   },
    * })
    * ```
+   *
+   * **Protocol + handlers** — separate protocol (source of truth) from handlers:
+   * ```ts
+   * .rpc(protocol, {
+   *   "session.create": async (p, ctx) => { ... },
+   *   "key.create": async (p, ctx) => { ... },
+   * })
+   * ```
+   * Protocol provides name, description, permissions. Handlers provide implementation.
    */
   rpc(methods: RpcMethods): ServiceBuilder;
+  rpc(protocol: RpcProtocolLike, handlers: Record<string, RpcMethodHandler>): ServiceBuilder;
+  /** Declare public methods (no auth required). Can be called multiple times. */
+  publicMethods(names: string[]): ServiceBuilder;
   /** Declare dependency registration. */
   register(fn: RegisterFn): ServiceBuilder;
   /** Bind to a platform runtime and produce the runnable export. */
@@ -112,12 +126,43 @@ class ServiceBuilderImpl implements ServiceBuilder {
     };
   }
 
-  rpc(methods: RpcMethods): ServiceBuilder {
-    const normalized: NormalizedRpcMethods = {};
-    for (const [name, entry] of Object.entries(methods)) {
-      normalized[name] = normalizeMethod(entry);
+  rpc(
+    methodsOrProtocol: RpcMethods | RpcProtocolLike,
+    handlers?: Record<string, RpcMethodHandler>,
+  ): ServiceBuilder {
+    if (handlers && "methods" in methodsOrProtocol && "namespace" in methodsOrProtocol) {
+      // Protocol + handlers mode
+      const protocol = methodsOrProtocol as RpcProtocolLike;
+      for (const method of protocol.methods) {
+        const handler = handlers[method.name];
+        if (!handler) {
+          throw new Error(
+            `[${this._definition.name}] Missing handler for protocol method "${method.name}"`,
+          );
+        }
+        this._definition.methods[method.name] = {
+          handler,
+          description: method.description,
+          permissions: method.permissions,
+        };
+      }
+    } else {
+      // Inline methods mode (existing behavior)
+      const methods = methodsOrProtocol as RpcMethods;
+      for (const [name, entry] of Object.entries(methods)) {
+        this._definition.methods[name] = normalizeMethod(entry);
+      }
     }
-    this._definition.methods = { ...this._definition.methods, ...normalized };
+    return this;
+  }
+
+  publicMethods(names: string[]): ServiceBuilder {
+    for (const name of names) {
+      const method = this._definition.methods[name];
+      if (method) {
+        method.permissions = [];
+      }
+    }
     return this;
   }
 
